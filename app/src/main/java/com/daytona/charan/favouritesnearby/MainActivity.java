@@ -207,12 +207,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         place = new Place();
                         place.setName(editText.getText().toString().toLowerCase().trim());
 
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                db.mPlaceDao().insertUsers(place);
-                            }
-                        }).start();
+                        new Thread(() -> db.mPlaceDao().insertUsers(place)).start();
 
                         results = root.customA;
 

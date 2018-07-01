@@ -9,7 +9,7 @@
     <EditText
         android:id="@+id/editText"
         android:layout_width="match_parent"
-        android:hint="type keyword. Eg: Restaurant."
+        android:hint="Type keyword. Eg: restaurant."
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_toLeftOf="@+id/button"
@@ -26,9 +26,11 @@
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerView"
+        android:background="@color/colorPrimary"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/editText"
+        android:layout_marginTop="10dp"
         android:scrollbars="vertical" />
 
     <ProgressBar
