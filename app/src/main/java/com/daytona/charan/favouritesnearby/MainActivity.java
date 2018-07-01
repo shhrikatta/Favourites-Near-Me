@@ -128,7 +128,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 String s = editText.getText().toString().toLowerCase().trim();
                 String[] split = s.split("\\s+");
 
-
                 if (split.length == 1) {
                     fetchStores(split[0]);
                 } else {
@@ -152,10 +151,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     protected void onResume() {
         super.onResume();
 
-        Toast.makeText(this, "Inside Resume", Toast.LENGTH_SHORT).show();
-
         new Thread(() -> {
             if (db.mPlaceDao().countPlace() > 0)    {
+                recyclerView.setVisibility(View.VISIBLE);
+
                 placeList = db.mPlaceDao().loadAllUsers();
                 runOnUiThread(()    ->  {
                     if (placeList != null && placeList.size() > 0)  {
@@ -163,6 +162,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         recyclerView.setAdapter(adapterStores);
                     }
                 });
+            }   else {
+                recyclerView.setVisibility(View.GONE);
             }
         }).start();
     }
