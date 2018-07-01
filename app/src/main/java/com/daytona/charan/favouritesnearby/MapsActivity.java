@@ -2,6 +2,13 @@ package com.daytona.charan.favouritesnearby;
 
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -12,16 +19,32 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private ArrayList<PlacesPOJO.CustomA> placesResults;
     private String currentLatLngString;
+    private Toolbar mToolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        mToolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
+
+        mToolbar.setTitle(R.string.title_activity_maps);
+        getSupportActionBar().setTitle(R.string.title_activity_maps);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        mToolbar.setNavigationIcon(R.drawable.ic_toolbar_navigation);
+        mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+        mToolbar.setOverflowIcon(ContextCompat.getDrawable(this, R.drawable.ic_place_option));
 
         if (getIntent().getSerializableExtra("PLACES_RES") != null)
             placesResults = (ArrayList<PlacesPOJO.CustomA>) getIntent().getSerializableExtra("PLACES_RES");
@@ -35,6 +58,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_places_list, menu);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId())   {
+            case R.id.idPlacesList:
+                Toast.makeText(this, "Places List clicked", Toast.LENGTH_SHORT).show();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 
     /**
      * Manipulates the map once available.
