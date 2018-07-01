@@ -122,17 +122,15 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String s = editText.getText().toString().toLowerCase().trim();
-                String[] split = s.split("\\s+");
+        button.setOnClickListener(v -> {
+            String s = editText.getText().toString().toLowerCase().trim();
+            String[] split = s.split("\\s+");
 
-                if (split.length == 1) {
-                    fetchStores(split[0]);
-                } else {
-                    Toast.makeText(getApplicationContext(), "Please enter text in the required format", Toast.LENGTH_SHORT).show();
-                }
+            if (split.length == 1) {
+                results = null;
+                fetchStores(split[0]);
+            } else {
+                Toast.makeText(getApplicationContext(), "Please enter text in the required format", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -153,17 +151,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         new Thread(() -> {
             if (db.mPlaceDao().countPlace() > 0)    {
-                recyclerView.setVisibility(View.VISIBLE);
-
                 placeList = db.mPlaceDao().loadAllUsers();
+
                 runOnUiThread(()    ->  {
+                    recyclerView.setVisibility(View.VISIBLE);
+
                     if (placeList != null && placeList.size() > 0)  {
                         RecyclerPlacesAdapter adapterStores = new RecyclerPlacesAdapter(placeList, MainActivity.this);
                         recyclerView.setAdapter(adapterStores);
                     }
                 });
             }   else {
-                recyclerView.setVisibility(View.GONE);
+                runOnUiThread(() -> recyclerView.setVisibility(View.GONE));
             }
         }).start();
     }
@@ -204,25 +203,19 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                 if (response.isSuccessful()) {
                     if (root.status.equals("OK")) {
+                        if (!editText.getText().toString().toLowerCase().trim().isEmpty())  {
+                            place = new Place();
+                            place.setName(editText.getText().toString().toLowerCase().trim());
 
-                        place = new Place();
-                        place.setName(editText.getText().toString().toLowerCase().trim());
+                            new Thread(() -> db.mPlaceDao().insertUsers(place)).start();
 
-                        new Thread(() -> db.mPlaceDao().insertUsers(place)).start();
+                            results = root.customA;
 
-                        results = root.customA;
-
-                        Intent mapIntent = new Intent(MainActivity.this, MapsActivity.class);
-                        mapIntent.putExtra("PLACES_RES", results);
-                        mapIntent.putExtra("CURRENT_LOC", latLngString);
-                        startActivity(mapIntent);
-/*
-                        storeModels = new ArrayList<>();
-                        for (int i = 0; i < results.size(); i++) {
-                            PlacesPOJO.CustomA info = results.get(i);
-                            fetchDistance(info);
+                            Intent mapIntent = new Intent(MainActivity.this, MapsActivity.class);
+                            mapIntent.putExtra("PLACES_RES", results);
+                            mapIntent.putExtra("CURRENT_LOC", latLngString);
+                            startActivity(mapIntent);
                         }
-*/
                     } else {
                         try {
                             Toast.makeText(getApplicationContext(), "No matches found near you " + response.body().status, Toast.LENGTH_SHORT).show();
@@ -495,6 +488,7 @@ Method to check whether GPS is enabled or not.
 
 
         if (split.length == 1) {
+            results = null;
             fetchStores(split[0]);
         } else {
             Toast.makeText(getApplicationContext(), "Please enter text in the required format", Toast.LENGTH_SHORT).show();
