@@ -14,7 +14,7 @@ public class PlacesPOJO {
     public class Root implements Serializable {
 
         @SerializedName("results")
-        public List<CustomA> customA = new ArrayList<>();
+        public ArrayList<CustomA> customA = new ArrayList<>();
         @SerializedName("status")
         public String status;
     }

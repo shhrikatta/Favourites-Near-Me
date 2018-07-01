@@ -10,14 +10,25 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.ArrayList;
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private ArrayList<PlacesPOJO.CustomA> placesResults;
+    private String currentLatLngString;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        if (getIntent().getSerializableExtra("PLACES_RES") != null)
+            placesResults = (ArrayList<PlacesPOJO.CustomA>) getIntent().getSerializableExtra("PLACES_RES");
+
+        if (getIntent().getSerializableExtra("CURRENT_LOC") != null)
+            currentLatLngString = (String) getIntent().getSerializableExtra("CURRENT_LOC");
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -39,8 +50,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
 
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        String lat = currentLatLngString.split(",")[0];
+        String lon = currentLatLngString.split(",")[1];
+
+        LatLng currlatlong = new LatLng(Double.parseDouble(lat), Double.parseDouble(lon));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currlatlong, 12.0F));
+
+        for (int i = 0; i < placesResults.size(); i++) {
+            PlacesPOJO.CustomA info = placesResults.get(i);
+            String placeLat = info.geometry.locationA.lat;
+            String placeLong = info.geometry.locationA.lng;
+
+            mMap.addMarker(new MarkerOptions().position(new LatLng(Double.parseDouble(placeLat),
+                    Double.parseDouble(placeLong))).title(info.name));
+        }
     }
 }

@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -20,6 +21,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -57,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     RecyclerView recyclerView;
     EditText editText;
     Button button;
-    List<com.daytona.charan.favouritesnearby.PlacesPOJO.CustomA> results;
+    ArrayList<PlacesPOJO.CustomA> results;
     /**
      * The M google api client.
      */
@@ -79,11 +81,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
      */
     LocationManager mLocationManager;
 
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        progressBar = findViewById(R.id.progressBar);
+        editText = (EditText) findViewById(R.id.editText);
+        button = (Button) findViewById(R.id.button);
 
         permissions.add(ACCESS_FINE_LOCATION);
         permissions.add(ACCESS_COARSE_LOCATION);
@@ -104,10 +111,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
-
-        editText = (EditText) findViewById(R.id.editText);
-        button = (Button) findViewById(R.id.button);
-
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -142,6 +145,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         if (latLngString == null || latLngString.isEmpty())
             fetchLocation();
 
+        progressBar.setVisibility(View.VISIBLE);
+
         Call<com.daytona.charan.favouritesnearby.PlacesPOJO.Root> call = apiService.doPlaces(latLngString, placeType,
                 "5000", com.daytona.charan.favouritesnearby.APIClient.GOOGLE_PLACE_API_KEY);
 //        https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=5000
@@ -154,21 +159,25 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         call.enqueue(new Callback<com.daytona.charan.favouritesnearby.PlacesPOJO.Root>() {
             @Override
             public void onResponse(Call<com.daytona.charan.favouritesnearby.PlacesPOJO.Root> call, Response<com.daytona.charan.favouritesnearby.PlacesPOJO.Root> response) {
+                progressBar.setVisibility(View.GONE);
+
                 com.daytona.charan.favouritesnearby.PlacesPOJO.Root root = response.body();
 
                 if (response.isSuccessful()) {
                     if (root.status.equals("OK")) {
 
                         results = root.customA;
+                        Intent mapIntent = new Intent(MainActivity.this, MapsActivity.class);
+                        mapIntent.putExtra("PLACES_RES", results);
+                        mapIntent.putExtra("CURRENT_LOC", latLngString);
+                        startActivity(mapIntent);
+/*
                         storeModels = new ArrayList<>();
                         for (int i = 0; i < results.size(); i++) {
-/*
-                            if (i == 10)
-                                break;
-*/
                             PlacesPOJO.CustomA info = results.get(i);
                             fetchDistance(info);
                         }
+*/
                     } else {
                         try {
                             Toast.makeText(getApplicationContext(), "No matches found near you " + response.body().status, Toast.LENGTH_SHORT).show();
@@ -186,6 +195,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
             @Override
             public void onFailure(Call<PlacesPOJO.Root> call, Throwable t) {
+                progressBar.setVisibility(View.GONE);
                 // Log error here since request failed
                 call.cancel();
             }
