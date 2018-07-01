@@ -13,7 +13,10 @@ public class APIClient {
 
     private static Retrofit retrofit = null;
 
-    public static final String GOOGLE_PLACE_API_KEY = "AIzaSyDeJ0DZ9uoxnZE9cPN5PKwjpdzGVP5Aww0";
+//    public static final String GOOGLE_PLACE_API_KEY = "AIzaSyBRRWY-ummj8Vtm4EmTXF-Avx1UbIFK76k";
+//    public static final String GOOGLE_PLACE_API_KEY = "AIzaSyB8LU-lqZyBLOg9RnRuRsubZMryHAlStlc";
+//    public static final String GOOGLE_PLACE_API_KEY = "AIzaSyDeJ0DZ9uoxnZE9cPN5PKwjpdzGVP5Aww0";
+    public static final String GOOGLE_PLACE_API_KEY = "AIzaSyDn29L87mlc-21CJBsXAuxI2l833ECMMtY";
 //    public static final String GOOGLE_PLACE_API_KEY = "AIzaSyDORkeixpBVJwvO8f7yQYIdvvj-OZCK3u8";
 
     public static String base_url = "https://maps.googleapis.com/maps/api/";

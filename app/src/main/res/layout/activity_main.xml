@@ -9,7 +9,7 @@
     <EditText
         android:id="@+id/editText"
         android:layout_width="match_parent"
-        android:hint="type keyword"
+        android:hint="type keyword. Eg: Restaurant."
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_toLeftOf="@+id/button"

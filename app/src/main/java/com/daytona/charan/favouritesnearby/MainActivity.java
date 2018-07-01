@@ -94,25 +94,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             checkLocationPermission();
         }
 
-/*
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (permissionsToRequest.size() > 0)
-                requestPermissions(permissionsToRequest.toArray(new String[permissionsToRequest.size()]), ALL_PERMISSIONS_RESULT);
-            else {
-                if (mGoogleApiClient == null)
-                    buildGoogleApiClient();
-
-                fetchLocation();
-            }
-        } else {
-            if (mGoogleApiClient == null)
-                buildGoogleApiClient();
-
-            fetchLocation();
-        }
-*/
-
-
         apiService = com.daytona.charan.favouritesnearby.APIClient.getClient().create(
                 com.daytona.charan.favouritesnearby.ApiInterface.class);
 
@@ -131,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String s = editText.getText().toString().trim();
+                String s = editText.getText().toString().toLowerCase().trim();
                 String[] split = s.split("\\s+");
 
 
@@ -154,38 +135,52 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         //Call<PlacesPOJO.Root> call = apiService.doPlaces(placeType, latLngString,"\""+ businessName +"\"", true, "distance", APIClient.GOOGLE_PLACE_API_KEY);
 
 //        Call<PlacesPOJO.Root> call = apiService.doPlaces(placeType, latLngString, businessName, true, "distance", APIClient.GOOGLE_PLACE_API_KEY);
-        Call<com.daytona.charan.favouritesnearby.PlacesPOJO.Root> call = apiService.doPlaces(placeType, latLngString, true, "distance", com.daytona.charan.favouritesnearby.APIClient.GOOGLE_PLACE_API_KEY);
+
+        if (mGoogleApiClient == null)
+            buildGoogleApiClient();
+
+        if (latLngString == null || latLngString.isEmpty())
+            fetchLocation();
+
+        Call<com.daytona.charan.favouritesnearby.PlacesPOJO.Root> call = apiService.doPlaces(latLngString, placeType,
+                "5000", com.daytona.charan.favouritesnearby.APIClient.GOOGLE_PLACE_API_KEY);
+//        https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=5000
+// &type=hospital&keyword=cruise&key=AIzaSyDn29L87mlc-21CJBsXAuxI2l833ECMMtY
+/*
+        Call<com.daytona.charan.favouritesnearby.PlacesPOJO.Root> call = apiService.doPlaces("-33.8670522,151.1957362",
+                "hospital", "5000", com.daytona.charan.favouritesnearby.APIClient.GOOGLE_PLACE_API_KEY);
+*/
+
         call.enqueue(new Callback<com.daytona.charan.favouritesnearby.PlacesPOJO.Root>() {
             @Override
             public void onResponse(Call<com.daytona.charan.favouritesnearby.PlacesPOJO.Root> call, Response<com.daytona.charan.favouritesnearby.PlacesPOJO.Root> response) {
                 com.daytona.charan.favouritesnearby.PlacesPOJO.Root root = response.body();
 
-
                 if (response.isSuccessful()) {
-
                     if (root.status.equals("OK")) {
 
                         results = root.customA;
                         storeModels = new ArrayList<>();
                         for (int i = 0; i < results.size(); i++) {
-
+/*
                             if (i == 10)
                                 break;
+*/
                             PlacesPOJO.CustomA info = results.get(i);
-
-
                             fetchDistance(info);
-
                         }
-
                     } else {
-                        Toast.makeText(getApplicationContext(), "No matches found near you", Toast.LENGTH_SHORT).show();
+                        try {
+                            Toast.makeText(getApplicationContext(), "No matches found near you " + response.body().status, Toast.LENGTH_SHORT).show();
+                        }   catch (NullPointerException e)  {
+                            e.printStackTrace();
+                            Toast.makeText(getApplicationContext(), "No matches found near you ", Toast.LENGTH_SHORT).show();
+                        }
                     }
 
                 } else if (response.code() != 200) {
                     Toast.makeText(getApplicationContext(), "Error " + response.code() + " found.", Toast.LENGTH_SHORT).show();
                 }
-
 
             }
 
@@ -196,6 +191,45 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             }
         });
 
+
+    }
+
+    private void fetchDistance(final PlacesPOJO.CustomA info) {
+
+        Call<ResultDistanceMatrix> call = apiService.getDistance(APIClient.GOOGLE_PLACE_API_KEY, latLngString, info.geometry.locationA.lat + "," + info.geometry.locationA.lng);
+        call.enqueue(new Callback<ResultDistanceMatrix>() {
+            @Override
+            public void onResponse(Call<ResultDistanceMatrix> call, Response<ResultDistanceMatrix> response) {
+
+                ResultDistanceMatrix resultDistance = response.body();
+                if ("OK".equalsIgnoreCase(resultDistance.status)) {
+
+                    ResultDistanceMatrix.InfoDistanceMatrix infoDistanceMatrix = resultDistance.rows.get(0);
+                    ResultDistanceMatrix.InfoDistanceMatrix.DistanceElement distanceElement = infoDistanceMatrix.elements.get(0);
+                    if ("OK".equalsIgnoreCase(distanceElement.status)) {
+                        ResultDistanceMatrix.InfoDistanceMatrix.ValueItem itemDuration = distanceElement.duration;
+                        ResultDistanceMatrix.InfoDistanceMatrix.ValueItem itemDistance = distanceElement.distance;
+                        String totalDistance = String.valueOf(itemDistance.text);
+                        String totalDuration = String.valueOf(itemDuration.text);
+
+                        storeModels.add(new StoreModel(info.name, info.vicinity, totalDistance, totalDuration));
+
+                        if (storeModels.size() == 10 || storeModels.size() == results.size()) {
+                            RecyclerViewAdapter adapterStores = new RecyclerViewAdapter(results, storeModels);
+                            recyclerView.setAdapter(adapterStores);
+                        }
+
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void onFailure(Call<ResultDistanceMatrix> call, Throwable t) {
+                call.cancel();
+            }
+        });
 
     }
 
@@ -255,51 +289,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 }
                 break;
 
-/*
-                for (String perms : permissionsToRequest) {
-                    if (!hasPermission(perms)) {
-                        permissionsRejected.add(perms);
-                    }
-                }
-
-                if (permissionsRejected.size() > 0) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        if (shouldShowRequestPermissionRationale(permissionsRejected.get(0))) {
-                            showMessageOKCancel("These permissions are mandatory for the application. Please allow access.",
-                                    new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                                requestPermissions(permissionsRejected.toArray(new String[permissionsRejected.size()]), ALL_PERMISSIONS_RESULT);
-
-                                                if (mGoogleApiClient == null)
-                                                    buildGoogleApiClient();
-                                            }
-                                        }
-                                    });
-                            return;
-                        }
-                    }
-                } else {
-                    if (mGoogleApiClient == null)
-                        buildGoogleApiClient();
-
-                    fetchLocation();
-                }
-
-                break;
-*/
         }
 
-    }
-
-    private void showMessageOKCancel(String message, DialogInterface.OnClickListener okListener) {
-        new AlertDialog.Builder(MainActivity.this)
-                .setMessage(message)
-                .setPositiveButton("OK", okListener)
-                .setNegativeButton("Cancel", null)
-                .create()
-                .show();
     }
 
     /**
@@ -332,74 +323,34 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private void fetchLocation() {
         if (isGpsEnabled()) {
-            mLocationRequest = new LocationRequest();
-            mLocationRequest.setInterval(1000);
-            mLocationRequest.setFastestInterval(1000);
-            mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-            mLocationRequest.setSmallestDisplacement(1.0F);
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
-                        mLocationRequest, new LocationListener() {
-                            @Override
-                            public void onLocationChanged(Location location) {
-                                latLngString = location.getLatitude() + "," + location.getLongitude();
-                                latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                            }
-                        });
+            if (mGoogleApiClient == null)
+                buildGoogleApiClient();
+
+            if (mGoogleApiClient.isConnected()) {
+                setLocation();
+            }
+
         } else {
             Toast.makeText(this, "No GPS", Toast.LENGTH_SHORT).show();
         }
 
-/*
-        SmartLocation.with(this).location()
-                .oneFix()
-                .start(new OnLocationUpdatedListener() {
-                    @Override
-                    public void onLocationUpdated(Location location) {
-                        latLngString = location.getLatitude() + "," + location.getLongitude();
-                        latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    }
-                });
-*/
     }
 
-    private void fetchDistance(final PlacesPOJO.CustomA info) {
-
-        Call<ResultDistanceMatrix> call = apiService.getDistance(APIClient.GOOGLE_PLACE_API_KEY, latLngString, info.geometry.locationA.lat + "," + info.geometry.locationA.lng);
-        call.enqueue(new Callback<ResultDistanceMatrix>() {
-            @Override
-            public void onResponse(Call<ResultDistanceMatrix> call, Response<ResultDistanceMatrix> response) {
-
-                ResultDistanceMatrix resultDistance = response.body();
-                if ("OK".equalsIgnoreCase(resultDistance.status)) {
-
-                    ResultDistanceMatrix.InfoDistanceMatrix infoDistanceMatrix = resultDistance.rows.get(0);
-                    ResultDistanceMatrix.InfoDistanceMatrix.DistanceElement distanceElement = infoDistanceMatrix.elements.get(0);
-                    if ("OK".equalsIgnoreCase(distanceElement.status)) {
-                        ResultDistanceMatrix.InfoDistanceMatrix.ValueItem itemDuration = distanceElement.duration;
-                        ResultDistanceMatrix.InfoDistanceMatrix.ValueItem itemDistance = distanceElement.distance;
-                        String totalDistance = String.valueOf(itemDistance.text);
-                        String totalDuration = String.valueOf(itemDuration.text);
-
-                        storeModels.add(new StoreModel(info.name, info.vicinity, totalDistance, totalDuration));
-
-
-                        if (storeModels.size() == 10 || storeModels.size() == results.size()) {
-                            RecyclerViewAdapter adapterStores = new RecyclerViewAdapter(results, storeModels);
-                            recyclerView.setAdapter(adapterStores);
+    private void setLocation()  {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        mLocationRequest.setSmallestDisplacement(1.0F);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
+                    mLocationRequest, new LocationListener() {
+                        @Override
+                        public void onLocationChanged(Location location) {
+                            latLngString = location.getLatitude() + "," + location.getLongitude();
+                            latLng = new LatLng(location.getLatitude(), location.getLongitude());
                         }
-
-                    }
-
-                }
-
-            }
-
-            @Override
-            public void onFailure(Call<ResultDistanceMatrix> call, Throwable t) {
-                call.cancel();
-            }
-        });
+                    });
 
     }
 
@@ -472,5 +423,11 @@ Method to check whether GPS is enabled or not.
     protected void onStop() {
         super.onStop();
         googleApiClientDisconnect();
+    }
+
+    @Override
+    protected void onPostResume() {
+        super.onPostResume();
+        buildGoogleApiClient();
     }
 }
