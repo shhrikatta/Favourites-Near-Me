@@ -7,6 +7,8 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.ProgressBar;
 
+import com.daytona.charan.favouritesnearby.adapter.RecyclerViewAdapter;
+
 import java.util.ArrayList;
 import java.util.List;
 

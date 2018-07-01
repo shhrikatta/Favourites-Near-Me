@@ -2,8 +2,8 @@ package com.daytona.charan.favouritesnearby;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.arch.persistence.room.Room;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -11,9 +11,9 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -24,6 +24,10 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.daytona.charan.favouritesnearby.adapter.RecyclerPlacesAdapter;
+import com.daytona.charan.favouritesnearby.adapter.RecyclerViewAdapter;
+import com.daytona.charan.favouritesnearby.data.AppDatabase;
+import com.daytona.charan.favouritesnearby.data.Place;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -43,7 +47,8 @@ import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+        GoogleApiClient.OnConnectionFailedListener,
+        RecyclerPlacesAdapter.ISelectedPlace{
 
 
     private ArrayList<String> permissionsToRequest;
@@ -82,11 +87,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     LocationManager mLocationManager;
 
     private ProgressBar progressBar;
+    private AppDatabase db;
+    private Place place;
+    private List<Place> placeList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        db = Room.databaseBuilder(getApplicationContext(),
+                AppDatabase.class, "places-db").build();
 
         progressBar = findViewById(R.id.progressBar);
         editText = (EditText) findViewById(R.id.editText);
@@ -104,16 +115,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         apiService = com.daytona.charan.favouritesnearby.APIClient.getClient().create(
                 com.daytona.charan.favouritesnearby.ApiInterface.class);
 
-/*
-        recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+        recyclerView = findViewById(R.id.recyclerView);
 
         recyclerView.setNestedScrollingEnabled(false);
         recyclerView.setHasFixedSize(true);
-
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
-*/
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -129,6 +137,34 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             }
         });
 
+    }
+
+    /**
+     * Dispatch onResume() to fragments.  Note that for better inter-operation
+     * with older versions of the platform, at the point of this call the
+     * fragments attached to the activity are <em>not</em> resumed.  This means
+     * that in some cases the previous state may still be saved, not allowing
+     * fragment transactions that modify the state.  To correctly interact
+     * with fragments in their proper state, you should instead override
+     * {@link #onResumeFragments()}.
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        Toast.makeText(this, "Inside Resume", Toast.LENGTH_SHORT).show();
+
+        new Thread(() -> {
+            if (db.mPlaceDao().countPlace() > 0)    {
+                placeList = db.mPlaceDao().loadAllUsers();
+                runOnUiThread(()    ->  {
+                    if (placeList != null && placeList.size() > 0)  {
+                        RecyclerPlacesAdapter adapterStores = new RecyclerPlacesAdapter(placeList, MainActivity.this);
+                        recyclerView.setAdapter(adapterStores);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void fetchStores(String placeType) {
@@ -168,7 +204,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 if (response.isSuccessful()) {
                     if (root.status.equals("OK")) {
 
+                        place = new Place();
+                        place.setName(editText.getText().toString().toLowerCase().trim());
+
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                db.mPlaceDao().insertUsers(place);
+                            }
+                        }).start();
+
                         results = root.customA;
+
                         Intent mapIntent = new Intent(MainActivity.this, MapsActivity.class);
                         mapIntent.putExtra("PLACES_RES", results);
                         mapIntent.putExtra("CURRENT_LOC", latLngString);
@@ -443,5 +490,18 @@ Method to check whether GPS is enabled or not.
     protected void onPostResume() {
         super.onPostResume();
         buildGoogleApiClient();
+    }
+
+    @Override
+    public void onPlaceSelected(String placeName) {
+        String s = editText.getText().toString().toLowerCase().trim();
+        String[] split = s.split("\\s+");
+
+
+        if (split.length == 1) {
+            fetchStores(split[0]);
+        } else {
+            Toast.makeText(getApplicationContext(), "Please enter text in the required format", Toast.LENGTH_SHORT).show();
+        }
     }
 }
