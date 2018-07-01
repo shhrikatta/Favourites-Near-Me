@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">Favourites Near By</string>
-    <string name="title_activity_maps">Map</string>
+    <string name="app_name">NearbyPlaces</string>
+    <string name="access_denied_to_location">permission denied to access location services</string>
 </resources>
