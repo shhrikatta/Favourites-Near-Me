@@ -214,7 +214,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                         storeModels.add(new StoreModel(info.name, info.vicinity, totalDistance, totalDuration));
 
-                        if (storeModels.size() == 10 || storeModels.size() == results.size()) {
+                        if (storeModels.size() == results.size()) {
                             RecyclerViewAdapter adapterStores = new RecyclerViewAdapter(results, storeModels);
                             recyclerView.setAdapter(adapterStores);
                         }
