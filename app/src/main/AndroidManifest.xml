@@ -29,6 +29,9 @@
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps"
-            android:theme="@style/MapsTheme" />
+            android:theme="@style/MapsTheme"/>
+        <activity android:name=".PlacesListActivity">
+        </activity>
     </application>
+
 </manifest>

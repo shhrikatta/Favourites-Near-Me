@@ -104,6 +104,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         apiService = com.daytona.charan.favouritesnearby.APIClient.getClient().create(
                 com.daytona.charan.favouritesnearby.ApiInterface.class);
 
+/*
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
 
         recyclerView.setNestedScrollingEnabled(false);
@@ -112,6 +113,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
+*/
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -204,6 +206,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
+/*
     private void fetchDistance(final PlacesPOJO.CustomA info) {
 
         Call<ResultDistanceMatrix> call = apiService.getDistance(APIClient.GOOGLE_PLACE_API_KEY, latLngString, info.geometry.locationA.lat + "," + info.geometry.locationA.lng);
@@ -243,6 +246,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
+*/
     private ArrayList<String> findUnAskedPermissions(ArrayList<String> wanted) {
         ArrayList<String> result = new ArrayList<>();
 

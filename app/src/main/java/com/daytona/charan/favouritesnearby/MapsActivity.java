@@ -1,5 +1,6 @@
 package com.daytona.charan.favouritesnearby;
 
+import android.content.Intent;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -69,7 +70,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId())   {
             case R.id.idPlacesList:
-                Toast.makeText(this, "Places List clicked", Toast.LENGTH_SHORT).show();
+                Intent placesIntent = new Intent(MapsActivity.this, PlacesListActivity.class);
+                placesIntent.putExtra("PLACES_RES", placesResults);
+                placesIntent.putExtra("CURRENT_LOC", currentLatLngString);
+                startActivity(placesIntent);
+//                Toast.makeText(this, "Places List clicked", Toast.LENGTH_SHORT).show();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
